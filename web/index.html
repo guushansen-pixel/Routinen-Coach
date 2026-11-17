@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Routinen-Coach</title>
+<style>
+:root {
+  --sat: env(safe-area-inset-top, 0px); --sab: env(safe-area-inset-bottom, 0px);
+  --bg: #12171E; --card: #1B222C; --line: #2A3441; --txt: #E8EDF2; --muted: #93A0AF;
+  --acc: #3FB6A8; --good: #4CC38A; --bad: #E5674F; --warn: #E0A93B;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--txt);
+  font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+#app { max-width: 560px; margin: 0 auto; padding: calc(var(--sat) + 8px) 14px calc(var(--sab) + 28px); }
+header { display: flex; align-items: center; gap: 8px; height: 48px; }
+header h1 { font-size: 20px; margin: 0; flex: 1; }
+#back { background: none; border: 0; color: var(--txt); font-size: 30px; line-height: 1; padding: 0 12px 4px 0; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin: 10px 0; }
+.card h2 { font-size: 13px; margin: 0 0 8px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.muted { color: var(--muted); } .small { font-size: 13px; } .good { color: var(--good); } .bad { color: var(--bad); } .warn { color: var(--warn); }
+.big { font-size: 28px; font-weight: 700; } .center { text-align: center; }
+button, a.btn { font: inherit; color: var(--txt); background: #26303D; border: 1px solid var(--line); border-radius: 11px; padding: 10px 12px; text-decoration: none; display: inline-block; text-align: center; }
+button.primary { background: var(--acc); border-color: var(--acc); color: #06201D; font-weight: 700; }
+button.block, a.block { display: block; width: 100%; margin-top: 8px; }
+button.ghost { background: none; }
+.chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.chip.on { background: var(--acc); border-color: var(--acc); color: #06201D; font-weight: 600; }
+.row { display: flex; gap: 8px; align-items: center; } .row > .grow { flex: 1; min-width: 0; }
+.item { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); }
+.item:first-of-type { border-top: 0; } .item .grow { flex: 1; min-width: 0; }
+.item .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item .no { width: 26px; height: 26px; border-radius: 50%; background: #0E1319; color: var(--muted); font-size: 12px; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+input[type=text], input[type=number], textarea { font: inherit; color: var(--txt); background: #0E1319; border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px; width: 100%; }
+textarea { resize: none; }
+label.f { display: block; margin: 10px 0 4px; font-size: 13px; color: var(--muted); }
+label.c { display: flex; align-items: center; gap: 10px; margin-top: 9px; }
+ul { margin: 6px 0; padding-left: 20px; } li { margin: 4px 0; }
+.step { display: flex; align-items: center; gap: 6px; }
+.step button { width: 42px; padding: 8px 0; } .step b { min-width: 64px; text-align: center; }
+.days { display: grid; grid-template-columns: repeat(14, 1fr); gap: 4px; margin-top: 8px; }
+.days i { aspect-ratio: 1; border-radius: 4px; background: #0E1319; } .days i.on { background: var(--acc); } .days i.today { outline: 1px solid var(--muted); }
+/* Uebung: Vollbild */
+#run { position: fixed; inset: 0; z-index: 10; background: var(--bg); display: flex; flex-direction: column;
+  padding: calc(var(--sat) + 6px) 14px calc(var(--sab) + 12px); touch-action: manipulation; }
+#run[hidden], #modal[hidden] { display: none; }
+#r-top { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+#r-close { background: none; border: 0; font-size: 28px; padding: 0 10px 4px 0; }
+#r-prog { flex: 1; font-size: 13px; color: var(--muted); }
+#r-body { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; }
+#r-name { font-size: 24px; font-weight: 700; line-height: 1.2; margin: 6px 0; }
+#ball { width: 150px; height: 150px; border-radius: 50%; margin: 10px auto 6px; background: radial-gradient(circle, var(--acc), #1E5F58); transform: scale(.5); flex: 0 0 auto; }
+#r-step { font-size: 22px; font-weight: 700; text-align: center; min-height: 32px; }
+#r-ctl { display: flex; gap: 8px; margin-top: 10px; } #r-ctl button { flex: 1; padding: 13px 4px; } #r-next { flex: 2 !important; }
+.bar { height: 6px; background: #0E1319; border-radius: 3px; overflow: hidden; } .bar i { display: block; height: 100%; width: 0; background: var(--acc); }
+#modal { position: fixed; inset: 0; z-index: 20; background: rgba(0,0,0,.6); display: flex; align-items: flex-end; justify-content: center; }
+#modal > div { background: var(--card); width: 100%; max-width: 560px; max-height: 92%; overflow-y: auto; border-radius: 16px 16px 0 0; padding: 16px 16px calc(var(--sab) + 16px); }
+#modal h3 { margin: 0 0 6px; }
+.btns { display: flex; gap: 8px; margin-top: 12px; } .btns button { flex: 1; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header><button id="back" aria-label="Zurück">‹</button><h1 id="title">Routinen-Coach</h1></header>
+  <main id="view"></main>
+</div>
+<div id="run" hidden>
+  <div id="r-top"><button id="r-close" aria-label="Schließen">‹</button><span id="r-prog"></span></div>
+  <div class="bar"><i id="r-bar"></i></div>
+  <div id="r-body"></div>
+  <div id="r-ctl"><button id="r-prev">Zurück</button><button id="r-pace">Takt starten</button><button id="r-next" class="primary">Weiter</button></div>
+</div>
+<div id="modal" hidden><div id="modal-in"></div></div>
+
+<script>
+'use strict';
+// =====================================================================
+// Routinen-Coach: feste taegliche Bewegungs-Routinen Uebung fuer Uebung
+// durchgehen, mit Atem-Takt, Stufe und Gewicht je Uebung, Video-Link und
+// Verlauf. Ein "System" ist ein Datenpaket (SYSTEMS oder selbst angelegt).
+// Die App enthaelt keine fremden Videos und keine Texte aus Buechern: Zu
+// The Happy Body bringt sie nur das Geruest mit, den Rest traegt man ein.
+// Aufbau: Daten -> Systeme -> Regeln (rein) -> Ablauf -> Ansichten
+//         -> Selbsttest (rcTests, ?debug=1). Details in README.md.
+// =====================================================================
+const $ = id => document.getElementById(id);
+const NATIVE = window.RcAndroid;
+
+// ---------------------------------------------------------------- Daten
+const K = { db: 'routinen.data.v1' };
+let saveOk = true;
+function load(k, fb) { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? fb : v; } catch (e) { return fb; } }
+const db = Object.assign({ schema: 1, cur: 'thb', edits: {}, cfg: {}, own: [], log: [], sound: true }, load(K.db, {}));
+function save() { try { localStorage.setItem(K.db, JSON.stringify(db)); } catch (e) { saveOk = false; } }
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+function dstr(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function today() { return dstr(new Date()); }
+
+// ---------------------------------------------------------------- Systeme
+// Ein System: {id, name, by, about, links, steps (Atemfolge je Wiederholung), def (Vorgaben),
+// levels (Zahl der Stufen, 0 = keine), kg (Gewicht je Uebung?), parts: [{name, items: [{id, name, how, link, todo}]}]}
+function slots(prefix, part, n) { const a = []; for (let i = 1; i <= n; i++) a.push({ id: prefix + part + '-' + i, name: 'Übung ' + i, how: '', link: '', todo: true }); return a; }
+// The Happy Body: Namen und Plaetze der 18 Uebungen, dazu was das Programm je Platz vorsieht
+// (pct = Gewicht in Prozent des Grundgewichts aus Uebung 1.1; fix6 = immer 6 Wiederholungen ohne Gewicht).
+// Belegt durch die offizielle Seite sind 1.1, 2.4 und 3.5 samt Platz sowie die Namen Fly Up und Rising
+// Tower. Alles andere stammt aus EINER Drittquelle (Datendatei einer freien Tracker-App, die sich auf das
+// Buch beruft) und ist mit dem Buch abzugleichen. Nur Namen, Zahlen und Links, keine Anleitungstexte.
+const THB_NAMES = [['Standing Tall', 'Cresting Wave', 'Take Off', 'Tapping Hammer', 'Sitting Tower', 'Take a Bow'],
+  ['Opening Wide', 'Shifting Wave', 'Fly Up', 'Rocking Trunk', 'Rising Tower', 'Encore Bow'],
+  ['Lying Long', 'Rolling Wave', 'Lift Off', 'Working Hinges', 'Power Tower', 'Final Bow']];
+const THB_PCT = [[100, 0, 0, 150, 200, 150], [50, 0, 0, 200, 100, 150], [150, 0, 0, 50, 100, 150]];
+const THB_LINK = { 'thb1-1': 'https://www.youtube.com/watch?v=ShkoQu3MA7k', 'thb3-5': 'https://vimeo.com/266011422' };
+function thbSlots(part) {
+  return THB_NAMES[part - 1].map((name, k) => { const id = 'thb' + part + '-' + (k + 1), fix6 = k === 1 || k === 2;
+    return { id, name, how: '', link: THB_LINK[id] || '', pct: THB_PCT[part - 1][k], fix6, noKg: fix6 }; });
+}
+const SYSTEMS = [
+  { id: 'thb', name: 'The Happy Body', by: 'Aniela und Jerzy Gregorek', levels: 5, kg: true,
+    about: 'Tägliche Routine aus 18 Übungen in drei Sequenzen zu je sechs, mit leichten Kurzhanteln und Matte. Jede Übung gibt es in fünf Stufen. Jede Wiederholung folgt derselben Atemfolge; nach dem Üben gehört Entspannung dazu.',
+    note: 'Die App enthält keine Anleitungstexte und keine Videos der Autoren, nur Namen, Zahlen und Links. Durch die offizielle Seite belegt sind Standing Tall (1.1), Rocking Trunk (2.4) und Power Tower (3.5). Die übrigen Namen und Plätze sowie Runden, Wiederholungen und Gewichtsanteile stammen aus einer einzelnen Drittquelle, die sich auf das Buch beruft: bitte mit deinem Buch abgleichen und bei Bedarf ändern.', unsure: true,
+    links: [['Offizielle Seite', 'https://thehappybody.com/'], ['Video: Sequenz 1, Stufe 1 (offizielle Seite)', 'https://thehappybody.com/the-happy-body-exercises-sequence-1-level-1/'], ['Dasselbe Video bei Vimeo', 'https://vimeo.com/355407164'],
+      ['Offizieller YouTube-Kanal', 'https://www.youtube.com/user/thehappybody'], ['Probe aus dem DVD-Set (YouTube)', 'https://www.youtube.com/watch?v=DFgg0grwC8s'], ['Sequenz 3, Video einer Anwenderin (YouTube)', 'https://www.youtube.com/watch?v=RHH-spbsgJw'], ['Alle Übungsvideos kaufen (offizielle Seite)', 'https://thehappybody.com/purchase-the-happy-body-exercise-videos/']],
+    steps: ['Einatmen', 'Anspannen', 'Heben', 'Dehnen', 'Zurück', 'Ausatmen'], def: { rounds: 3, reps: 3, stepSec: 1.5, rest: 0, relax: 5 },
+    parts: [1, 2, 3].map(p => ({ name: 'Sequenz ' + p, items: thbSlots(p) })) },
+  { id: 'mob', name: 'Beweglich in 12 Minuten', by: 'eigenes Programm dieser App', levels: 0, kg: false,
+    about: 'Zwölf verbreitete Beweglichkeits-Übungen für Wirbelsäule, Hüfte, Schultern und Haltung, ohne Geräte. Gedacht als Einstieg und als Beispiel dafür, wie ein System in der App aussieht.',
+    note: 'Allgemeine Übungen, kein Ersatz für Physiotherapie. Geh nur so weit, wie es ohne Schmerz geht.',
+    links: [], steps: ['Einatmen', 'Hinein', 'Halten', 'Zurück'], def: { rounds: 1, reps: 5, stepSec: 3, rest: 5, relax: 2 },
+    parts: [
+      { name: 'Wirbelsäule und Hüfte', items: [
+        { id: 'mob-1', name: 'Katze und Kuh', how: 'Im Vierfüßlerstand den Rücken abwechselnd rund nach oben schieben und sanft durchhängen lassen. Der Kopf folgt der Bewegung, die Arme bleiben gestreckt.' },
+        { id: 'mob-2', name: 'Tiefe Hocke', how: 'Füße etwas weiter als schulterbreit, so tief wie möglich in die Hocke, Fersen am Boden. Mit den Ellbogen die Knie leicht nach außen drücken, Brust aufrichten. Bei Bedarf an einem Türrahmen festhalten.' },
+        { id: 'mob-3', name: 'Hüftbeuger im Ausfallschritt', how: 'Im halben Kniestand das Becken nach vorn schieben und das Gesäß des hinteren Beins anspannen, bis es vorn in der Leiste zieht. Oberkörper aufrecht. Seite wechseln.' },
+        { id: 'mob-4', name: 'Hüftdrehung im Sitzen (90/90)', how: 'Am Boden sitzen, beide Knie etwa im rechten Winkel, eines vor dem Körper, eines seitlich. Aufrecht über das vordere Schienbein lehnen, dann beide Knie zur anderen Seite kippen.' },
+        { id: 'mob-5', name: 'Brustwirbel-Drehung', how: 'Im Vierfüßlerstand eine Hand an den Hinterkopf. Den Ellbogen erst zum anderen Arm führen, dann weit zur Decke aufdrehen und hinterherschauen. Seite wechseln.' },
+        { id: 'mob-6', name: 'Vorbeuge Wirbel für Wirbel', how: 'Aus dem Stand das Kinn zur Brust und langsam Wirbel für Wirbel nach unten abrollen, die Arme hängen locker. Unten kurz hängen, dann genauso langsam wieder aufrollen. Knie dürfen leicht gebeugt sein.' }] },
+      { name: 'Schultern und Haltung', items: [
+        { id: 'mob-7', name: 'Große Schulterkreise', how: 'Einen gestreckten Arm langsam in einem möglichst großen Kreis nach vorn, oben und hinten führen, ohne dass der Oberkörper mitdreht. Erst die eine Richtung, dann die andere, dann der andere Arm.' },
+        { id: 'mob-8', name: 'Wandengel', how: 'Mit Rücken, Gesäß und Hinterkopf an die Wand. Die Arme wie ein U anlegen und langsam nach oben schieben und wieder senken, Handrücken und Ellbogen bleiben möglichst an der Wand.' },
+        { id: 'mob-9', name: 'Brustdehnung am Türrahmen', how: 'Den Unterarm senkrecht an den Türrahmen legen, Ellbogen auf Schulterhöhe, und den Körper langsam nach vorn und leicht weg drehen, bis es in der Brust zieht. Seite wechseln.' },
+        { id: 'mob-10', name: 'Y, T und W in Bauchlage', how: 'Auf dem Bauch liegen, Stirn am Boden. Die Arme nacheinander in Y-, T- und W-Form wenige Zentimeter anheben und die Schulterblätter dabei nach hinten unten ziehen.' },
+        { id: 'mob-11', name: 'Nacken seitlich dehnen', how: 'Aufrecht sitzen, ein Ohr langsam zur Schulter neigen, die andere Schulter bewusst tief lassen. Nicht ziehen, nur das Gewicht des Kopfes wirken lassen. Seite wechseln.' },
+        { id: 'mob-12', name: 'Lang machen im Stand', how: 'Füße hüftbreit, Gewicht auf dem ganzen Fuß. Den Scheitel zur Decke schieben, als würde dich jemand an einem Faden hochziehen, Schultern locker nach hinten unten, Bauch leicht fest.' }] }] }];
+function allSystems() { return SYSTEMS.concat(db.own); }
+function sysById(id) { return allSystems().find(s => s.id === id) || SYSTEMS[0]; }
+
+// ---------------------------------------------------------------- Regeln (rein)
+// Nur https-Links zulassen; alles andere gilt als kein Link.
+function safeUrl(u) { u = String(u || '').trim(); return /^https:\/\/[^\s"'<>]+\.[^\s"'<>]+$/i.test(u) ? u : ''; }
+function videoSearch(name, sysName) { return 'https://www.youtube.com/results?search_query=' + encodeURIComponent((name + ' ' + (sysName || '') + ' Übung').trim()); }
+// Uebung mit den eigenen Aenderungen (Name, Hinweis, Link, Stufe, Gewicht) zusammenfuehren.
+function mergeItem(base, edit) {
+  const e = edit || {}, o = Object.assign({}, base, { level: e.level || 1, kg: e.kg || 0 });
+  if (e.name) { o.name = e.name; o.todo = false; } if (e.how !== undefined) o.how = e.how; if (e.link !== undefined) o.link = e.link;
+  return o;
+}
+// Text -> Teile. "# Titel" beginnt einen Teil; je Zeile "Name | Hinweis | Link".
+function parseList(text) {
+  const parts = []; let cur = null;
+  String(text).split(/\r?\n/).forEach(z => {
+    const s = z.trim(); if (!s) return;
+    if (s[0] === '#') { cur = { name: s.replace(/^#+\s*/, '').slice(0, 40) || 'Teil ' + (parts.length + 1), items: [] }; parts.push(cur); return; }
+    const f = s.split('|').map(x => x.trim()); if (!f[0]) return;
+    if (!cur) { cur = { name: 'Teil 1', items: [] }; parts.push(cur); }
+    if (cur.items.length < 40) cur.items.push({ name: f[0].slice(0, 60), how: (f[1] || '').slice(0, 600), link: safeUrl(f[2]) });
+  });
+  return parts.filter(p => p.items.length);
+}
+// Ablauf: die gewaehlten Teile als flache Liste; jeder Teil wird rounds-mal hintereinander durchlaufen.
+function sessionPlan(sys, partIdx, rounds) {
+  const out = [], n = Math.max(1, rounds || 1);
+  sys.parts.forEach((p, pi) => { if (partIdx.indexOf(pi) >= 0) for (let r = 1; r <= n; r++) p.items.forEach(it => out.push({ part: pi, id: it.id, round: r })); });
+  return out;
+}
+// Wiederholungen einer Uebung: fest 6, wo das Programm es so vorsieht, sonst die eingestellte Zahl.
+function repsOf(it, cfg) { return it.fix6 ? 6 : cfg.reps; }
+// Atem-Takt: Wo steht man nach t Sekunden? {rep (ab 1), step, into (0..1), done}
+function paceAt(t, nSteps, stepSec, reps) {
+  const per = nSteps * stepSec, total = per * reps; if (t >= total) return { done: true, rep: reps, step: nSteps - 1, into: 1 };
+  const r = Math.floor(t / per), u = t - r * per, s = Math.floor(u / stepSec);
+  return { done: false, rep: r + 1, step: s, into: (u - s * stepSec) / stepSec };
+}
+// Kreisgroesse 0..1: waechst in der ersten Haelfte der Schritte, schrumpft in der zweiten.
+function ballSize(step, into, nSteps) { const x = (step + into) / nSteps; return x < 0.5 ? x * 2 : (1 - x) * 2; }
+function planSeconds(n, sys, cfg) { return n * (sys.steps.length * cfg.stepSec * cfg.reps + cfg.rest) + cfg.relax * 60; }
+// Tage in Folge bis heute (ein noch offener heutiger Tag bricht die Serie nicht).
+function streak(dates, todayStr) {
+  const set = new Set(dates); let d = new Date(todayStr + 'T12:00'), n = 0;
+  if (!set.has(dstr(d))) d.setDate(d.getDate() - 1);
+  while (set.has(dstr(d))) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+function fmtClock(sec) { sec = Math.max(0, Math.ceil(sec)); return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); }
+function fmtKg(v) { return String(Math.round(v * 2) / 2).replace('.', ',') + ' kg'; }
+// Eigenes System aus Name und Liste bauen (ids fortlaufend).
+function buildSystem(id, name, parts) {
+  let n = 0;
+  return { id, name: name.slice(0, 40), by: 'eigenes System', own: true, levels: 5, kg: true, about: '', note: '', links: [], steps: ['Einatmen', 'Hinein', 'Halten', 'Zurück'], def: { rounds: 1, reps: 5, stepSec: 3, rest: 5, relax: 0 },
+    parts: parts.map(p => ({ name: p.name, items: p.items.map(it => ({ id: id + '-' + (++n), name: it.name, how: it.how, link: it.link })) })) };
+}
+
+// ---------------------------------------------------------------- Zugriff
+function cfgOf(sys) { return Object.assign({ rounds: 1 }, sys.def, db.cfg[sys.id] || {}); }
+function itemOf(sys, id) { let b = null; sys.parts.forEach(p => p.items.forEach(it => { if (it.id === id) b = it; })); return b ? mergeItem(b, (db.edits[sys.id] || {})[id]) : null; }
+function setEdit(sys, id, patch) { const e = db.edits[sys.id] || (db.edits[sys.id] = {}); e[id] = Object.assign({}, e[id], patch); save(); }
+function todoCount(sys) { let n = 0; sys.parts.forEach(p => p.items.forEach(it => { if (itemOf(sys, it.id).todo) n++; })); return n; }
+
+// ---------------------------------------------------------------- Ton
+let actx = null;
+function beep(freq, dur) {
+  if (!db.sound) return;
+  try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === 'suspended') actx.resume();
+    const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime; o.frequency.value = freq; g.gain.setValueAtTime(0.08, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + dur); } catch (e) {}
+}
+
+// ---------------------------------------------------------------- Ablauf einer Uebungseinheit
+const R = { on: false, sys: null, plan: [], i: 0, t0: 0, pace: null, timer: 0, relax: null, lastStep: -1, done: {} };
+const rBody = html => { $('r-body').innerHTML = html; };
+function startRun(sys, partIdx) {
+  const plan = sessionPlan(sys, partIdx, cfgOf(sys).rounds); if (!plan.length) return;
+  Object.assign(R, { on: true, sys, plan, i: 0, t0: Date.now(), pace: null, relax: null, done: {} });
+  $('run').hidden = false; if (location.hash !== '#run') location.hash = 'run';
+  clearInterval(R.timer); R.timer = setInterval(runTick, 100); showItem();
+}
+function stopPace() { R.pace = null; R.lastStep = -1; $('r-pace').textContent = 'Takt starten'; }
+function showItem() {
+  stopPace(); R.relax = null;
+  const sys = R.sys, p = R.plan[R.i], it = itemOf(sys, p.id), cfg = cfgOf(sys), link = safeUrl(it.link);
+  const reps = repsOf(it, cfg);
+  $('r-prog').textContent = (R.i + 1) + ' von ' + R.plan.length + ' · ' + sys.parts[p.part].name + (cfg.rounds > 1 ? ' · Runde ' + p.round + ' von ' + cfg.rounds : ''); $('r-bar').style.width = (R.i / R.plan.length * 100) + '%';
+  $('r-ctl').hidden = false; $('r-prev').disabled = R.i === 0; $('r-next').textContent = R.i === R.plan.length - 1 ? 'Fertig' : 'Weiter';
+  rBody('<div id="r-name">' + esc(it.name) + '</div>' +
+    (sys.levels || sys.kg ? '<div class="row" style="flex-wrap:wrap;gap:14px;margin:4px 0 6px">' +
+      (sys.levels ? '<div class="step"><button data-lv="-1">−</button><b>Stufe ' + it.level + '</b><button data-lv="1">+</button></div>' : '') +
+      (sys.kg && !it.noKg ? '<div class="step"><button data-kg="-0.5">−</button><b>' + fmtKg(it.kg) + '</b><button data-kg="0.5">+</button></div>' : '') + '</div>' : '') +
+    (it.noKg ? '<div class="muted small">Laut Programm ohne Gewicht, immer 6 Wiederholungen.</div>' : it.pct ? '<div class="muted small">Gewicht laut Programm: ' + it.pct + ' % des Grundgewichts (das ist das Gewicht je Hand in Übung 1 der Sequenz 1).</div>' : '') +
+    (it.how ? '<div class="small" style="white-space:pre-wrap">' + esc(it.how) + '</div>' : it.todo ? '<div class="small warn">Für diese Übung ist noch nichts eingetragen. Tippe auf „Bearbeiten“, um Namen, Hinweis und Video-Link zu ergänzen.</div>' : '') +
+    '<div class="row" style="margin-top:8px"><a class="btn grow" target="_blank" rel="noopener" href="' + esc(link || videoSearch(it.todo ? sys.parts[p.part].name : it.name, sys.name)) + '">' + (link ? '▶ Video ansehen' : 'Video suchen') + '</a><button id="r-edit">Bearbeiten</button></div>' +
+    '<div id="ball"></div><div id="r-step">' + reps + ' × ' + sys.steps.join(' · ') + '</div><div class="muted small center" id="r-rep">je Schritt ' + cfg.stepSec + ' s</div>');
+  $('r-body').querySelectorAll('[data-lv]').forEach(b => b.onclick = () => { setEdit(sys, p.id, { level: clamp(it.level + +b.dataset.lv, 1, sys.levels) }); showItem(); });
+  $('r-body').querySelectorAll('[data-kg]').forEach(b => b.onclick = () => { setEdit(sys, p.id, { kg: clamp(it.kg + +b.dataset.kg, 0, 100) }); showItem(); });
+  $('r-edit').onclick = () => editItem(sys, p.id, showItem);
+}
+function runTick() {
+  if (!R.on) return;
+  if (R.relax) { const rem = (R.relax - Date.now()) / 1000; if (rem <= 0) { beep(660, 0.4); finishRun(); return; } if ($('rx-left')) $('rx-left').textContent = fmtClock(rem); return; }
+  if (!R.pace) return;
+  const sys = R.sys, cfg = cfgOf(sys), n = sys.steps.length, reps = repsOf(itemOf(sys, R.plan[R.i].id), cfg), st = paceAt((Date.now() - R.pace) / 1000, n, cfg.stepSec, reps);
+  if (st.done) { stopPace(); R.done[R.i] = true; beep(880, 0.25); $('r-step').textContent = 'Geschafft'; $('r-rep').textContent = reps + ' Wiederholungen'; $('ball').style.transform = 'scale(.5)'; return; }
+  const key = st.rep * 100 + st.step; if (key !== R.lastStep) { R.lastStep = key; beep(st.step === 0 ? 520 : 400, 0.06); $('r-step').textContent = sys.steps[st.step]; $('r-rep').textContent = 'Wiederholung ' + st.rep + ' von ' + reps; }
+  $('ball').style.transform = 'scale(' + (0.5 + 0.5 * ballSize(st.step, st.into, n)).toFixed(3) + ')';
+}
+$('r-pace').onclick = () => { if (R.pace) stopPace(); else { R.pace = Date.now(); $('r-pace').textContent = 'Takt anhalten'; runTick(); } };
+$('r-prev').onclick = () => { if (R.i > 0) { R.i--; showItem(); } };
+$('r-next').onclick = () => {
+  R.done[R.i] = true;
+  if (R.i < R.plan.length - 1) { R.i++; showItem(); return; }
+  const cfg = cfgOf(R.sys); stopPace(); $('r-bar').style.width = '100%';
+  if (cfg.relax > 0) {
+    R.relax = Date.now() + cfg.relax * 60000; $('r-ctl').hidden = true; $('r-prog').textContent = 'Entspannung';
+    rBody('<div class="center" style="margin:auto 0"><div class="muted">Hinlegen, Augen zu, ruhig atmen.</div><div class="big" id="rx-left" style="font-size:56px">' + fmtClock(cfg.relax * 60) + '</div><button class="block" id="rx-skip">Überspringen</button></div>');
+    $('rx-skip').onclick = finishRun;
+  } else finishRun();
+};
+function finishRun() {
+  if (!R.on) return;
+  const n = Object.keys(R.done).length, min = Math.max(1, Math.round((Date.now() - R.t0) / 60000));
+  if (n) { db.log.push({ d: today(), sys: R.sys.id, n, of: R.plan.length, min }); db.log = db.log.slice(-400); save(); }
+  R.result = n ? { n, of: R.plan.length, min } : null; closeRun(); if (location.hash === '#run') history.back();
+}
+function closeRun() { R.on = false; clearInterval(R.timer); stopPace(); R.relax = null; $('run').hidden = true; }
+$('r-close').onclick = () => { if (Object.keys(R.done).length) finishRun(); else history.back(); };
+
+// ---------------------------------------------------------------- Dialoge
+function openModal(html, init) { $('modal-in').innerHTML = html; $('modal').hidden = false; init && init($('modal-in')); }
+function closeModal() { $('modal').hidden = true; }
+function editItem(sys, id, after) {
+  const it = itemOf(sys, id);
+  openModal('<h3>Übung bearbeiten</h3><label class="f" style="margin-top:0">Name</label><input type="text" id="e-name" maxlength="60" value="' + esc(it.todo ? '' : it.name) + '" placeholder="' + esc(it.name) + '">' +
+    '<label class="f">Dein Hinweis (in eigenen Worten: worauf achten, was spüren)</label><textarea id="e-how" rows="5" maxlength="600">' + esc(it.how || '') + '</textarea>' +
+    '<label class="f">Link zum Video (https://…)</label><input type="text" id="e-link" inputmode="url" value="' + esc(it.link || '') + '" placeholder="leer = Video-Suche">' +
+    '<div id="e-msg" class="small bad"></div><div class="btns"><button class="ghost" id="e-x">Abbrechen</button><button class="primary" id="e-ok">Speichern</button></div>', () => {
+    $('e-x').onclick = closeModal;
+    $('e-ok').onclick = () => {
+      const link = $('e-link').value.trim(); if (link && !safeUrl(link)) { $('e-msg').textContent = 'Der Link muss mit https:// beginnen.'; return; }
+      setEdit(sys, id, { name: $('e-name').value.trim().slice(0, 60), how: $('e-how').value.trim(), link }); closeModal(); after && after();
+    };
+  });
+}
+// Liste einfuegen: bei einem mitgelieferten System fuellt sie die vorhandenen Plaetze der Reihe nach.
+function importDialog(sys) {
+  const total = sys.parts.reduce((a, p) => a + p.items.length, 0);
+  openModal('<h3>Liste einfügen</h3><div class="small">Eine Übung je Zeile, in der Reihenfolge des Programms: <b>Name | Hinweis | Link</b>. Hinweis und Link sind freiwillig. Die ' + total + ' Plätze von „' + esc(sys.name) + '“ werden der Reihe nach gefüllt.</div>' +
+    '<textarea id="i-text" rows="10" style="margin-top:8px" placeholder="Name der ersten Übung | worauf ich achte | https://…"></textarea><div id="i-msg" class="small bad"></div>' +
+    '<div class="btns"><button class="ghost" id="i-x">Abbrechen</button><button class="primary" id="i-ok">Übernehmen</button></div>', () => {
+    $('i-x').onclick = closeModal;
+    $('i-ok').onclick = () => {
+      const items = [].concat.apply([], parseList($('i-text').value).map(p => p.items)); if (!items.length) { $('i-msg').textContent = 'Keine Zeile erkannt.'; return; }
+      const ids = [].concat.apply([], sys.parts.map(p => p.items.map(it => it.id)));
+      items.slice(0, ids.length).forEach((it, k) => { const patch = { name: it.name }; if (it.how) patch.how = it.how; if (it.link) patch.link = it.link; setEdit(sys, ids[k], patch); });
+      closeModal(); render('home');
+    };
+  });
+}
+function newSystemDialog() {
+  openModal('<h3>Eigenes System</h3><label class="f" style="margin-top:0">Name</label><input type="text" id="n-name" maxlength="40" placeholder="z. B. Morgenroutine">' +
+    '<label class="f">Übungen: eine je Zeile als <b>Name | Hinweis | Link</b>; eine Zeile mit # beginnt einen neuen Teil</label>' +
+    '<textarea id="n-text" rows="10" placeholder="# Aufwärmen\nArmkreisen | locker, groß\n# Kraft\nKniebeuge | Fersen am Boden"></textarea><div id="n-msg" class="small bad"></div>' +
+    '<div class="btns"><button class="ghost" id="n-x">Abbrechen</button><button class="primary" id="n-ok">Anlegen</button></div>', () => {
+    $('n-x').onclick = closeModal;
+    $('n-ok').onclick = () => {
+      const name = $('n-name').value.trim(), parts = parseList($('n-text').value);
+      if (!name) { $('n-msg').textContent = 'Bitte einen Namen eingeben.'; return; } if (!parts.length) { $('n-msg').textContent = 'Bitte mindestens eine Übung eintragen.'; return; }
+      const s = buildSystem('o' + Date.now().toString(36), name, parts); db.own.push(s); db.cur = s.id; save(); closeModal(); render('home');
+    };
+  });
+}
+function cfgDialog(sys) {
+  const c = cfgOf(sys), row = (id, label, v, min, max, step) => '<label class="f">' + label + '</label><input type="number" id="' + id + '" inputmode="decimal" min="' + min + '" max="' + max + '" step="' + step + '" value="' + v + '">';
+  openModal('<h3>Ablauf: ' + esc(sys.name) + '</h3><div class="small muted">Die Sekunden je Atemschritt sind ein Startwert dieser App. Runden und Wiederholungen folgen bei The Happy Body einer Drittquelle, nicht geprüft am Buch. Stell alles so ein, wie dein Programm es vorsieht.</div>' +
+    row('c-rounds', 'Runden je Teil (jeder Teil wird so oft hintereinander durchlaufen)', c.rounds, 1, 10, 1) + row('c-reps', 'Wiederholungen je Übung' + (sys.id === 'thb' ? ' (laut Drittquelle 3 zum Halten oder Abnehmen, 6 zum Aufbauen; Übungen 2 und 3 jeder Sequenz immer 6)' : ''), c.reps, 1, 30, 1) + row('c-sec', 'Sekunden je Schritt der Atemfolge (' + esc(sys.steps.join(', ')) + ')', c.stepSec, 1, 20, 0.5) +
+    row('c-rest', 'Pause zwischen den Übungen in Sekunden (nur für die Zeitschätzung)', c.rest, 0, 300, 5) + row('c-relax', 'Entspannung am Ende in Minuten (0 = keine)', c.relax, 0, 60, 1) +
+    '<div class="btns"><button class="ghost" id="c-x">Abbrechen</button><button class="primary" id="c-ok">Speichern</button></div>', () => {
+    $('c-x').onclick = closeModal;
+    $('c-ok').onclick = () => { const num = (id, a, b, fb) => { const v = parseFloat($(id).value.replace(',', '.')); return isFinite(v) ? clamp(v, a, b) : fb; };
+      db.cfg[sys.id] = { rounds: Math.round(num('c-rounds', 1, 10, c.rounds)), reps: Math.round(num('c-reps', 1, 30, c.reps)), stepSec: num('c-sec', 1, 20, c.stepSec), rest: num('c-rest', 0, 300, c.rest), relax: Math.round(num('c-relax', 0, 60, c.relax)) }; save(); closeModal(); render('home'); };
+  });
+}
+function backupDialog() {
+  const text = JSON.stringify({ app: 'routinen-coach', version: 1, data: db });
+  openModal('<h3>Daten sichern oder einspielen</h3><div class="small muted">Kopiere den Text und bewahre ihn auf. Zum Einspielen einen gesicherten Text einfügen; er ersetzt alles.</div><textarea id="b-text" rows="6" style="margin-top:8px;font:12px/1.4 monospace">' + esc(text) + '</textarea><div id="b-msg" class="small"></div>' +
+    '<div class="btns"><button class="ghost" id="b-x">Schließen</button><button id="b-copy">Kopieren</button><button id="b-in">Einspielen</button></div>', () => {
+    $('b-x').onclick = closeModal;
+    $('b-copy').onclick = () => { $('b-text').select(); let ok = false; try { ok = document.execCommand('copy'); } catch (e) {} $('b-msg').textContent = ok ? 'Kopiert ✓' : 'Bitte von Hand markieren und kopieren.'; };
+    $('b-in').onclick = () => { try { const j = JSON.parse($('b-text').value); if (j.app !== 'routinen-coach' || !j.data || !Array.isArray(j.data.log)) throw 0; Object.keys(db).forEach(k => delete db[k]); Object.assign(db, { schema: 1, cur: 'thb', edits: {}, cfg: {}, own: [], log: [], sound: true }, j.data); save(); closeModal(); render('home'); } catch (e) { $('b-msg').innerHTML = '<span class="bad">Das ist keine Sicherung dieser App.</span>'; } };
+  });
+}
+
+// ---------------------------------------------------------------- Ansichten
+const view = $('view'), VIEWS = {}, TITLES = { home: 'Routinen-Coach', info: 'So ist die App gedacht', log: 'Verlauf' };
+VIEWS.home = () => {
+  const sys = sysById(db.cur), cfg = cfgOf(sys), todo = todoCount(sys), total = sys.parts.reduce((a, p) => a + p.items.length, 0), dates = db.log.map(x => x.d), st = streak(dates, today());
+  let h = '';
+  if (!saveOk) h += '<div class="card small bad">Speichern ist fehlgeschlagen.</div>';
+  if (window.RC_TEST) h += '<div class="card small" id="selftest">Selbsttest: ' + RC_TEST.ok + ' OK, ' + RC_TEST.fail + ' Fehler</div>';
+  if (R.result) h += '<div class="card"><h2>Gerade eben</h2><div class="big">' + R.result.n + ' von ' + R.result.of + ' Übungen</div><div class="muted small">in ' + R.result.min + ' min</div></div>';
+  h += '<div class="card"><div class="chips">' + allSystems().map(s => '<button class="chip' + (s.id === sys.id ? ' on' : '') + '" data-sys="' + esc(s.id) + '">' + esc(s.name) + '</button>').join('') + '<button class="chip" id="h-new">+ Eigenes</button></div></div>';
+  h += '<div class="card"><h2>' + esc(sys.name) + ' · ' + esc(sys.by) + '</h2>' + (sys.about ? '<div class="small">' + esc(sys.about) + '</div>' : '') + (sys.note ? '<div class="small muted" style="margin-top:6px">' + esc(sys.note) + '</div>' : '') +
+    sys.links.map(l => '<a class="btn block" target="_blank" rel="noopener" href="' + esc(safeUrl(l[1])) + '">' + esc(l[0]) + ' ↗</a>').join('') +
+    (todo ? '<div class="small warn" style="margin-top:10px">' + todo + ' von ' + total + ' Übungen haben noch keinen Namen.</div><button class="block" id="h-imp">Liste der Übungen einfügen</button>' : sys.unsure ? '<button class="block ghost small" id="h-imp">Namen durch eine eigene Liste ersetzen</button>' : '') + '</div>';
+  h += '<div class="card"><h2>Üben</h2><div class="row"><div class="grow"><div class="big">' + st + '</div><div class="muted small">Tage in Folge</div></div><div class="grow"><div class="big">~' + Math.round(planSeconds(total * cfg.rounds, sys, cfg) / 60) + ' min</div><div class="muted small">ganze Routine</div></div></div>' +
+    '<button class="primary block" id="h-all">Ganze Routine starten (' + total + ' Übungen' + (cfg.rounds > 1 ? ', je ' + cfg.rounds + ' Runden' : '') + ')</button>' +
+    (sys.parts.length > 1 ? '<div class="chips" style="margin-top:8px">' + sys.parts.map((p, i) => '<button class="chip" data-part="' + i + '">nur ' + esc(p.name) + '</button>').join('') + '</div>' : '') +
+    '<div class="days">' + Array.from({ length: 28 }, (x, k) => { const d = new Date(); d.setDate(d.getDate() - 27 + k); const s = dstr(d); return '<i class="' + (dates.indexOf(s) >= 0 ? 'on' : '') + (k === 27 ? ' today' : '') + '"></i>'; }).join('') + '</div><div class="muted small" style="margin-top:4px">die letzten vier Wochen</div></div>';
+  sys.parts.forEach((p, pi) => { h += '<div class="card"><h2>' + esc(p.name) + '</h2>' + p.items.map((b, k) => { const it = itemOf(sys, b.id);
+    return '<div class="item" data-it="' + esc(b.id) + '"><span class="no">' + (k + 1) + '</span><div class="grow"><div class="t' + (it.todo ? ' muted' : '') + '">' + esc(it.name) + (it.todo ? ' (Name fehlt)' : '') + '</div><div class="muted small">' +
+      [sys.levels ? 'Stufe ' + it.level : '', it.noKg ? 'ohne Gewicht' : sys.kg && it.kg ? fmtKg(it.kg) : it.pct ? it.pct + ' %' : '', safeUrl(it.link) ? 'Video ✓' : ''].filter(Boolean).join(' · ') + '</div></div><span class="muted">›</span></div>'; }).join('') + '</div>'; });
+  h += '<div class="row"><button class="grow" id="h-cfg">Ablauf</button><button class="grow" id="h-log">Verlauf</button><button class="grow" id="h-info">Info</button></div>' +
+    '<div class="row" style="margin-top:8px"><button class="grow ghost small" id="h-bak">Daten sichern</button><button class="grow ghost small" id="h-snd">Töne: ' + (db.sound ? 'an' : 'aus') + '</button>' + (sys.own ? '<button class="grow ghost small bad" id="h-del">System löschen</button>' : '') + '</div>';
+  view.innerHTML = h;
+  view.querySelectorAll('[data-sys]').forEach(b => b.onclick = () => { db.cur = b.dataset.sys; save(); R.result = null; render('home'); });
+  view.querySelectorAll('[data-part]').forEach(b => b.onclick = () => startRun(sys, [+b.dataset.part]));
+  view.querySelectorAll('[data-it]').forEach(el => el.onclick = () => editItem(sys, el.dataset.it, () => render('home')));
+  $('h-all').onclick = () => startRun(sys, sys.parts.map((p, i) => i)); $('h-new').onclick = newSystemDialog; $('h-cfg').onclick = () => cfgDialog(sys);
+  $('h-log').onclick = () => { location.hash = 'log'; }; $('h-info').onclick = () => { location.hash = 'info'; }; $('h-bak').onclick = backupDialog;
+  $('h-snd').onclick = () => { db.sound = !db.sound; save(); render('home'); };
+  if ($('h-imp')) $('h-imp').onclick = () => importDialog(sys);
+  if ($('h-del')) $('h-del').onclick = () => openModal('<h3>System löschen?</h3><div class="muted small">' + esc(sys.name) + ' mit allen Übungen. Der Verlauf bleibt.</div><div class="btns"><button class="ghost" id="q-no">Abbrechen</button><button class="bad" id="q-yes">Löschen</button></div>', () => {
+    $('q-no').onclick = closeModal; $('q-yes').onclick = () => { db.own = db.own.filter(s => s.id !== sys.id); delete db.edits[sys.id]; delete db.cfg[sys.id]; db.cur = 'thb'; save(); closeModal(); render('home'); }; });
+};
+VIEWS.log = () => {
+  const L = db.log.slice().reverse();
+  view.innerHTML = '<div class="card"><div class="row"><div class="grow"><div class="big">' + new Set(db.log.map(x => x.d)).size + '</div><div class="muted small">Tage geübt</div></div><div class="grow"><div class="big">' + db.log.reduce((a, x) => a + x.min, 0) + ' min</div><div class="muted small">insgesamt</div></div></div></div>' +
+    '<div class="card"><h2>Einheiten</h2>' + (L.length ? L.slice(0, 60).map(x => '<div class="item"><div class="grow"><div class="t">' + esc(sysById(x.sys).id === x.sys ? sysById(x.sys).name : 'gelöschtes System') + '</div><div class="muted small">' + x.d.slice(8, 10) + '.' + x.d.slice(5, 7) + '.' + x.d.slice(0, 4) + '</div></div><span class="muted small">' + x.n + ' von ' + x.of + ' · ' + x.min + ' min</span></div>').join('') : '<div class="muted small">Noch keine Einheit.</div>') + '</div>';
+};
+VIEWS.info = () => {
+  view.innerHTML = '<div class="card"><h2>Die Idee</h2><div class="small">Eine feste Routine wirkt, wenn man sie täglich macht. Die App führt dich Übung für Übung hindurch, gibt auf Wunsch den Takt der Atemfolge vor und merkt sich Stufe und Gewicht je Übung. Den Kreis kannst du ignorieren und einfach „Weiter“ tippen.</div></div>' +
+    '<div class="card"><h2>Videos und Texte</h2><div class="small">Die App enthält keine Videos und keine Texte aus Büchern oder von Webseiten; die gehören den Autoren. Zu jeder Übung kannst du einen Link speichern, zum Beispiel auf das offizielle Video. Er öffnet sich im Browser oder in der Video-App. Ohne Link führt der Knopf zu einer Video-Suche nach dem Namen der Übung.</div></div>' +
+    '<div class="card"><h2>Eigene Systeme</h2><div class="small">Über „+ Eigenes“ legst du ein weiteres Programm an: Name, dann eine Übung je Zeile als „Name | Hinweis | Link“; eine Zeile mit # beginnt einen neuen Teil. So lässt sich jede feste Routine abbilden.</div></div>' +
+    '<div class="card"><h2>Ehrlich eingeordnet</h2><ul class="small"><li>Zu The Happy Body sind nur drei Übungen samt Platz durch die offizielle Seite belegt. Die übrigen Namen und die Zahlen (Runden, Wiederholungen, Gewichtsanteile) stammen aus einer einzelnen Drittquelle. Gleich sie mit dem Buch ab, bevor du dich darauf verlässt.</li><li>Die Sekunden je Atemschritt sind ein Startwert der App.</li><li>Die App sieht nicht, ob du eine Übung richtig machst. Für die Technik sind Video, Buch oder ein Trainer da.</li><li>Bei Schmerzen aufhören. Nach Verletzungen vorher mit Arzt oder Physiotherapie abklären.</li></ul></div>' +
+    '<div class="muted small">Routinen-Coach v1.0</div>';
+};
+function render(name) {
+  if (!VIEWS[name]) name = 'home';
+  $('title').textContent = TITLES[name]; $('back').style.visibility = name === 'home' ? 'hidden' : 'visible';
+  VIEWS[name](); window.scrollTo(0, 0);
+}
+function route() {
+  const h = (location.hash || '#home').slice(1); closeModal();
+  if (R.on && h !== 'run') closeRun();
+  if (h === 'run') { if (!R.on) { history.replaceState(null, '', '#home'); render('home'); } return; }
+  if (h !== 'home') R.result = null;
+  render(h);
+}
+$('back').onclick = () => history.back();
+window.addEventListener('hashchange', route);
+
+// ---------------------------------------------------------------- Selbsttest
+function rcTests() {
+  let ok = 0, fail = 0;
+  const t = (name, cond, info) => { if (cond) { ok++; console.log('OK   ' + name); } else { fail++; console.error('FAIL ' + name + (info !== undefined ? ' -> ' + info : '')); } };
+  const ids = s => [].concat.apply([], s.parts.map(p => p.items.map(i => i.id)));
+  t('Systeme: eindeutige Kennungen, jede Übung mit Name', SYSTEMS.every(s => new Set(ids(s)).size === ids(s).length && s.parts.every(p => p.items.every(i => i.name))) && new Set(SYSTEMS.map(s => s.id)).size === SYSTEMS.length);
+  const T0 = SYSTEMS[0], flat = [].concat.apply([], T0.parts.map(p => p.items));
+  t('The Happy Body: 3 Sequenzen zu je 6, 5 Stufen, 6 Atemschritte, 18 verschiedene Namen, nirgends eine Anleitung', T0.parts.length === 3 && T0.parts.every(p => p.items.length === 6) && flat.every(i => !i.how && i.name && !i.todo) && new Set(flat.map(i => i.name)).size === 18 && T0.levels === 5 && T0.steps.length === 6 && T0.unsure);
+  t('The Happy Body: belegte Plätze, feste Übungen ohne Gewicht, Gewichtsanteile', flat[0].name === 'Standing Tall' && flat[9].name === 'Rocking Trunk' && flat[16].name === 'Power Tower' && flat[8].name === 'Fly Up' && flat[10].name === 'Rising Tower' &&
+    T0.parts.every(p => p.items[1].fix6 && p.items[2].fix6 && p.items[1].noKg && !p.items[0].fix6 && p.items[1].pct === 0) && flat[0].pct === 100 && flat[4].pct === 200 && flat[6].pct === 50 && flat[15].pct === 50 && safeUrl(flat[0].link) && safeUrl(flat[16].link));
+  t('Wiederholungen: fest 6 oder eingestellt', repsOf({ fix6: true }, { reps: 3 }) === 6 && repsOf({}, { reps: 3 }) === 3);
+  t('Eigenes Programm: 12 Übungen mit Anleitung', ids(SYSTEMS[1]).length === 12 && SYSTEMS[1].parts.every(p => p.items.every(i => i.how.length > 60 && !i.todo)));
+  t('Links der Systeme sind https', SYSTEMS.every(s => s.links.every(l => safeUrl(l[1]) === l[1])));
+  t('safeUrl: nur https', safeUrl('https://example.org/a?b=1') === 'https://example.org/a?b=1' && safeUrl('http://example.org') === '' && safeUrl('javascript:alert(1)') === '' && safeUrl('https://x') === '' && safeUrl(' https://a.de ') === 'https://a.de' && safeUrl('https://a.de/"><script>') === '' && safeUrl(null) === '');
+  t('Video-Suche wird kodiert', videoSearch('Katze & Kuh', 'Mein System') === 'https://www.youtube.com/results?search_query=Katze%20%26%20Kuh%20Mein%20System%20%C3%9Cbung');
+  const m = mergeItem({ id: 'a', name: 'Übung 1', how: '', link: '', todo: true }, { name: 'Standwaage', level: 3, kg: 2.5, link: 'https://a.de' });
+  t('mergeItem: eigene Angaben gewinnen, Platzhalter erledigt', m.name === 'Standwaage' && m.todo === false && m.level === 3 && m.kg === 2.5 && m.link === 'https://a.de' && mergeItem({ id: 'a', name: 'X', todo: true }).todo === true && mergeItem({ id: 'a', name: 'X' }, {}).level === 1);
+  const pl = parseList('Erste | langsam | https://a.de/v\n\n# Kraft\nZweite\n  Dritte |  | http://unsicher.de\n# Leer\n');
+  t('parseList: Teile, Felder, unsichere Links fallen weg, leere Teile auch', pl.length === 2 && pl[0].name === 'Teil 1' && pl[0].items[0].how === 'langsam' && pl[0].items[0].link === 'https://a.de/v' && pl[1].name === 'Kraft' && pl[1].items.length === 2 && pl[1].items[1].link === '' && parseList('').length === 0);
+  const sp = sessionPlan(SYSTEMS[0], [0, 2]), sp3 = sessionPlan(SYSTEMS[0], [0, 1], 3);
+  t('sessionPlan: gewählte Teile in Reihenfolge, Runden je Teil hintereinander', sp.length === 12 && sp[0].id === 'thb1-1' && sp[6].id === 'thb3-1' && sp[6].part === 2 && sessionPlan(SYSTEMS[0], []).length === 0 &&
+    sp3.length === 36 && sp3[6].id === 'thb1-1' && sp3[6].round === 2 && sp3[17].round === 3 && sp3[18].id === 'thb2-1' && sp3[18].round === 1);
+  let p = paceAt(0, 6, 2, 5); const p2 = paceAt(13.5, 6, 2, 5), p3 = paceAt(60, 6, 2, 5), p4 = paceAt(59.9, 6, 2, 5);
+  t('Atem-Takt: Wiederholung, Schritt und Ende', p.rep === 1 && p.step === 0 && p.into === 0 && p2.rep === 2 && p2.step === 0 && Math.abs(p2.into - 0.75) < 1e-9 && p3.done && !p4.done && p4.rep === 5 && p4.step === 5);
+  t('Kreis: wächst bis zur Mitte, schrumpft danach', ballSize(0, 0, 6) === 0 && ballSize(3, 0, 6) === 1 && Math.abs(ballSize(5, 1, 6)) < 1e-9 && ballSize(1, 0.5, 6) === 0.5);
+  t('Dauer der Routine', planSeconds(18, SYSTEMS[0], { reps: 5, stepSec: 2, rest: 10, relax: 5 }) === 18 * 70 + 300 && cfgOf(SYSTEMS[0]).rounds >= 1 && cfgOf(SYSTEMS[1]).rounds === 1);
+  t('Serie: Tage in Folge, heute darf noch offen sein', streak(['2026-11-14', '2026-11-15', '2026-11-16'], '2026-11-16') === 3 && streak(['2026-11-14', '2026-11-15'], '2026-11-16') === 2 && streak(['2026-11-13'], '2026-11-16') === 0 && streak([], '2026-11-16') === 0 && streak(['2026-10-31', '2026-11-01'], '2026-11-01') === 2);
+  const bs = buildSystem('o1', 'Morgen', pl);
+  t('Eigenes System: fortlaufende Kennungen, Vorgaben', ids(bs).join() === 'o1-1,o1-2,o1-3' && bs.own && bs.def.reps === 5 && bs.parts[1].items[0].name === 'Zweite');
+  t('Formate', fmtClock(125) === '2:05' && fmtClock(-1) === '0:00' && fmtKg(2.5) === '2,5 kg' && fmtKg(3) === '3 kg');
+  console.log('Selbsttest: ' + ok + ' OK, ' + fail + ' Fehler');
+  return { ok, fail };
+}
+window.rcTests = rcTests;
+if (!sysById(db.cur) || sysById(db.cur).id !== db.cur) db.cur = 'thb';
+if (/[?&]debug=1/.test(location.search)) window.RC_TEST = rcTests();
+route();
+</script>
+</body>
+</html>
