@@ -43,9 +43,10 @@ cd "D:\claude code projects\routinen-coach"
 v1.0 (code 1, 2026-11-16): zwei Systeme (The Happy Body mit 18 benannten
 Plätzen, Runden, Wiederholungen und Gewichtsanteilen; "Beweglich in 12
 Minuten" als eigenes Programm), eigene Systeme, Ablauf mit Atem-Takt, Stufe
-und Gewicht, Verlauf, Sicherung. In einer Cloud-Sitzung gebaut: **keine
-APK, kein GitHub-Repo, am Gerät nichts getestet.** Selbsttest 17/17; ein
-Durchlauf im Browser per Roboter.
+und Gewicht, Verlauf, Sicherung. In einer Cloud-Sitzung gebaut; am
+2026-11-17 lokal als Release-APK gebaut, aufs Handy installiert und nach
+GitHub gepusht (guushansen-pixel/Routinen-Coach). **Am Gerät noch nichts
+getestet.** Selbsttest 17/17; ein Durchlauf im Browser per Roboter.
 
 **Die Angaben zu The Happy Body sind großteils unbestätigt.** Belegt (über
 Suchtreffer der offiziellen Seite) sind nur 1.1, 2.4, 3.5 samt Platz und
